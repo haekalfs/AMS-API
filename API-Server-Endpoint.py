@@ -99,22 +99,7 @@ def endpoint():
     uptime = data["uptime_since_last_boot"]
     usr_first_login = data["usr_first_login"]
     last_updated = data["last_updated"]
-
-    #Retrieve data from local json files
-    # username = os.getlogin()
-    # file_path = os.path.join("C:", "Users", username, "Documents", "data", "data.json")
-    # os.makedirs(os.path.dirname(file_path), exist_ok=True)
-
-    # with open(file_path, "r") as infile:
-    #     data = json.load(infile)
-
-    # user_id = data['user_id']
-    # password = data['password']
-    # token = data['token']
-
-    # print(data['name'])
-
-    # Authenticate user
+    
     cur = conn.cursor()
     cur.execute("SELECT * FROM users WHERE email = %s AND password = %s AND token = %s", (user_id, password,token))
     user = cur.fetchone()
@@ -138,15 +123,11 @@ def endpoint():
     else:
         cur.execute("UPDATE assets_active_time SET assets_active_time = %s, hostname = %s, assets_last_boot = %s,working_hours = %s,ipAddrLocal = %s, assets_location = %s, usr_first_login = %s, last_updated = %s WHERE email = %s", (uptime,hostname,last_boot,workHours,ipAddrLocal,ipAddr,usr_first_login,last_updated,user_id))
         conn.commit()
-
-    # cur.execute("UPDATE assets_active_time SET assets_active_time = %s, hostname = %s, assets_last_boot = %s,working_hours = %s,ipAddrLocal = %s, assets_location = %s, usr_first_login = %s, last_updated = %s WHERE email = %s", (uptime,hostname,last_boot,workHours,ipAddrLocal,ipAddr,usr_first_login,last_updated,user_id))
-    # cur.execute("INSERT INTO assets_active_time (email,assets_active_time,hostname,assets_last_boot,working_hours,ipAddrLocal,assets_location,usr_first_login,last_updated) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)", (user_id,uptime,hostname,last_boot,workHours,ipAddrLocal,ipAddr,usr_first_login,last_updated))
-    # conn.commit()
     print(data)
     return jsonify({'message': 'Successfully sent to database'})
 
 if __name__ == '__main__':
-    app.run()
+    app.run(host="192.168.1.34", port=8029, debug=True)
 
 # host="10.1.201.39", port=8000, debug=True
 # ISSUE DI DIRECTORY FOLDER data.json
