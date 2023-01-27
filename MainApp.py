@@ -3,10 +3,14 @@ from datetime import datetime, timedelta
 from urllib.request import urlopen
 import re as r
 import socket
+import os
 import requests
 
+user_folder = os.path.expanduser("~")
+documents_folder = os.path.join(user_folder, r"Documents\AMS\data.json")
+
 # REFRESH JSON DATA WHEN DAY IS
-with open('data.json', 'r') as f:
+with open(documents_folder, 'r') as f:
     data = json.load(f)
 
 now = datetime.now()
@@ -18,13 +22,12 @@ if last_updated.day != now.day:
     data['usr_first_login'] = str(now_seconds)
     data['last_updated'] = str(now.replace(microsecond=0))
 
-with open('data.json', 'w') as f:
+with open(documents_folder, 'w') as f:
     json.dump(data, f)
 
 
-
 #GET DATA FOR USR_FIRST LOGIN, WORKHOURS, CHECKING IF USR_FIRST_LOGIN MORE LATEST THAN NOW = JSON NOT CHANGED
-with open('data.json', 'r') as f:
+with open(documents_folder, 'r') as f:
     data = json.load(f)
 
 usr_first_login = data['usr_first_login']
@@ -35,21 +38,33 @@ timewatch = now.replace(minute=0, second=0, microsecond=0)
 a = usr_first_login
 b = timewatch
 workHours = b - a
-print(workHours)
 
 if usr_first_login.hour > now.hour:
     data['usr_first_login'] = str(now_seconds)
-    with open('data.json', 'w') as f:
+    with open(documents_folder, 'w') as f:
         json.dump(data, f)
 elif usr_first_login.hour < now.hour:
     print ("FIRST LOGIN LEBIH AWAL DARI SAAT INI!")
 
 # GET IP PUBLIC FOR LOCATION
 def getIP():
-    d = str(urlopen('http://checkip.dyndns.com/').read())
-    return r.compile(r'Address: (\d+\.\d+\.\d+\.\d+)').search(d).group(1)
+    response = requests.get("https://ipinfo.io/ip")
+    public_ip = response.text.strip()
+    return str(public_ip)
 
-ipAddr = getIP()
+def check_internet():
+    try:
+        # connecting to a server on the internet
+        socket.create_connection(("www.google.com", 80))
+        return True
+    except OSError:
+        pass
+    return False
+
+if check_internet():
+    ipAddr = getIP()
+else:
+    ipAddr = str('117.54.110.194')
 
 # GET LAST REBOOT TIME
 boot_time = psutil.boot_time()
@@ -68,13 +83,14 @@ ipLocal = socket.gethostbyname(hostname)
 
 # START PROCESS #
 # Set the endpoint URL
-url = 'http://117.54.110.201:8029/endpoint'
+# url = 'http://127.0.0.1:8000/endpoint'
+url = 'http://117.54.110.201:8000/endpoint'
 
 # Assume you have got the token from earlier step
 headers = {'Authorization': 'Bearer ' + data['token']}
 
 #load json
-with open('data.json', 'r') as f:
+with open(documents_folder, 'r') as f:
     data = json.load(f)
 
 # Set the data for the request body to json
@@ -88,14 +104,15 @@ data["workHours"] = str(workHours)
 data["last_updated"] = str(datetime.now().replace(microsecond=0))
 
 # Write updated data to file
-with open('data.json', 'w') as f:
+with open(documents_folder, 'w') as f:
     json.dump(data, f)
 
-with open('data.json', 'r') as f:
+with open(documents_folder, 'r') as f:
     data1 = json.load(f)
 
-# print (data)
-# Make the POST request
-response = requests.post(url, headers=headers, json=data1)
-
-print(response.json())
+try:
+    if check_internet():
+        response = requests.post(url, headers=headers, json=data1)
+        print(response.json())
+except:
+    pass
